@@ -1,0 +1,62 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5750d98..4a72619 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,14 +36,17 @@ option(LEVELDB_INSTALL "Install LevelDB's header and library" ON)
+ option(LEVELDB_DISABLE_RTTI "Disable Rtti" ON)
+ option(LEVELDB_SUPPORT_LEGACY_ZLIB_ENUM "Legacy Zlib Support" OFF)
+ 
++set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake")
++
+ include(CheckIncludeFile)
+ check_include_file("unistd.h" HAVE_UNISTD_H)
+ 
++find_package(SNAPPY REQUIRED)
++find_package(ZSTD REQUIRED)
++find_package(ZLIB REQUIRED)
++
+ include(CheckLibraryExists)
+ check_library_exists(crc32c crc32c_value "" HAVE_CRC32C)
+-check_library_exists(snappy snappy_compress "" HAVE_SNAPPY)
+-check_library_exists(zstd zstd_compress "" HAVE_ZSTD)
+-check_library_exists(zlib deflate "" HAVE_ZLIB)
+ check_library_exists(tcmalloc malloc "" HAVE_TCMALLOC)
+ 
+ include(CheckCXXSymbolExists)
+@@ -58,7 +61,7 @@ check_cxx_symbol_exists(O_CLOEXEC "fcntl.h" HAVE_O_CLOEXEC)
+ 
+ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+   # Disable C++ exceptions.
+-  add_compile_options(/EHs-c-)
++  add_compile_options(/EHs)
+   add_definitions(-D_HAS_EXCEPTIONS=0)
+ 
+   if(LEVELDB_DISABLE_RTTI)
+@@ -283,15 +286,18 @@ endif(HAVE_CLANG_THREAD_SAFETY)
+ if(HAVE_CRC32C)
+   target_link_libraries(leveldb crc32c)
+ endif(HAVE_CRC32C)
+-if(HAVE_SNAPPY)
+-  target_link_libraries(leveldb snappy)
+-endif(HAVE_SNAPPY)
+-if(HAVE_ZSTD)
+-  target_link_libraries(leveldb zstd)
+-endif(HAVE_ZSTD)
+-if(HAVE_ZLIB)
+-  target_link_libraries(leveldb zlib)
+-endif(HAVE_ZLIB)
++if(SNAPPY_FOUND)
++  include_directories(leveldb ${SNAPPY_INCLUDE_DIRS})
++  target_link_libraries(leveldb ${SNAPPY_LIBRARIES})
++endif(SNAPPY_FOUND)
++if(ZSTD_FOUND)
++  include_directories(leveldb ${ZSTD_INCLUDE_DIRS})
++  target_link_libraries(leveldb ${ZSTD_LIBRARIES})
++endif(ZSTD_FOUND)
++if(ZLIB_FOUND)
++  include_directories(leveldb ${ZLIB_INCLUDE_DIRS})
++  target_link_libraries(leveldb ${ZLIB_LIBRARIES})
++endif(ZLIB_FOUND)
+ if(HAVE_TCMALLOC)
+   target_link_libraries(leveldb tcmalloc)
+ endif(HAVE_TCMALLOC)

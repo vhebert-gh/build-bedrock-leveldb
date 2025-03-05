@@ -1,2 +1,9 @@
-build
-dependencies
+*.zip
+build-x64/
+depend-x64/
+build-arm64/
+depend-arm64/
+download/
+leveldb-x64/
+leveldb-arm64/
+source/

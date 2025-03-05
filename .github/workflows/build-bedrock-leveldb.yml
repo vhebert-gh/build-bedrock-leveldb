@@ -1,0 +1,58 @@
+
+name: build-bedrock-leveldb
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+
+    outputs:
+      OUTPUT_DATE: ${{ steps.build.outputs.OUTPUT_DATE }}
+
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: build
+        id: build
+        shell: cmd
+        run: call build.cmd ${{ matrix.arch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: leveldb-${{ matrix.arch }}-${{ steps.build.outputs.OUTPUT_DATE }}
+          path: leveldb-${{ matrix.arch }}-${{ steps.build.outputs.OUTPUT_DATE }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    runs-on: ubuntu-24.04
+    needs: build
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+
+      - name: release
+        run: gh release create ${{ needs.build.outputs.OUTPUT_DATE }} -R "${GITHUB_REPOSITORY}" -t '${{ needs.build.outputs.OUTPUT_DATE }}'
+
+      - name: get artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: leveldb-*-${{ needs.build.outputs.OUTPUT_DATE }}
+          merge-multiple: true
+
+      - name: Upload artifacts
+        run: gh release upload '${{ needs.build.outputs.OUTPUT_DATE }}' leveldb-*-${{ needs.build.outputs.OUTPUT_DATE }}.zip -R "${GITHUB_REPOSITORY}"
